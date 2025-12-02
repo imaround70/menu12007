@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1200 Calorie Meal Planner</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Custom scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Dark mode scrollbar */
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* Modal overlay */
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                -webkit-tap-highlight-color: transparent;
+            }
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Lucide Icons as React components
+        const Clock = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+        );
+
+        const Download = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3" />
+            </svg>
+        );
+
+        const ShoppingCart = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+        );
+
+        const RefreshCw = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+        );
+
+        const X = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const Home = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        );
+
+        const List = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+        );
+
+        const Sun = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        );
+
+        const Moon = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        );
+
+        const Plus = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const MealPlanner = () => {
+            const [currentTheme, setCurrentTheme] = useState(() => {
+                return parseInt(localStorage.getItem('app-theme') || '0');
+            });
+            const [darkMode, setDarkMode] = useState(() => {
+                return localStorage.getItem('app-dark-mode') === 'true';
+            });
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [currentDay, setCurrentDay] = useState(1);
+            const [weekMeals, setWeekMeals] = useState({});
+            const [progress, setProgress] = useState({});
+            const [nextMealTimers, setNextMealTimers] = useState({});
+            const [showRecipe, setShowRecipe] = useState(null);
+            const [overeatingModal, setOvereatingModal] = useState(null);
+            const [extraCalories, setExtraCalories] = useState('');
+            const [shoppingList, setShoppingList] = useState([]);
+            const [showShoppingList, setShowShoppingList] = useState(false);
+            const [currentPage, setCurrentPage] = useState('meals');
+
+            // Update body class for dark mode
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                localStorage.setItem('app-dark-mode', darkMode);
+            }, [darkMode]);
+
+            // Save theme to localStorage
+            useEffect(() => {
+                localStorage.setItem('app-theme', currentTheme.toString());
+            }, [currentTheme]);
+
+            const themes = [
+                { name: 'Lavender Dream', bg: 'from-purple-50 to-pink-50', card: 'bg-white/80', accent: 'bg-purple-400', accentHover: 'hover:bg-purple-500', text: 'text-purple-900', border: 'border-purple-300' },
+                { name: 'Mint Breeze', bg: 'from-green-50 to-blue-50', card: 'bg-white/80', accent: 'bg-green-400', accentHover: 'hover:bg-green-500', text: 'text-green-900', border: 'border-green-300' },
+                { name: 'Peach Sunset', bg: 'from-orange-50 to-yellow-50', card: 'bg-white/80', accent: 'bg-orange-400', accentHover: 'hover:bg-orange-500', text: 'text-orange-900', border: 'border-orange-300' }
+            ];
+
+            const daysOfWeek = [
+                { name: 'Monday', color: 'bg-purple-100 hover:bg-purple-200 border-purple-300', activeColor: 'bg-purple-300 border-purple-500' },
+                { name: 'Tuesday', color: 'bg-blue-100 hover:bg-blue-200 border-blue-300', activeColor: 'bg-blue-300 border-blue-500' },
+                { name: 'Wednesday', color: 'bg-green-100 hover:bg-green-200 border-green-300', activeColor: 'bg-green-300 border-green-500' },
+                { name: 'Thursday', color: 'bg-yellow-100 hover:bg-yellow-200 border-yellow-300', activeColor: 'bg-yellow-300 border-yellow-500' },
+                { name: 'Friday', color: 'bg-orange-100 hover:bg-orange-200 border-orange-300', activeColor: 'bg-orange-300 border-orange-500' },
+                { name: 'Saturday', color: 'bg-pink-100 hover:bg-pink-200 border-pink-300', activeColor: 'bg-pink-300 border-pink-500' },
+                { name: 'Sunday', color: 'bg-red-100 hover:bg-red-200 border-red-300', activeColor: 'bg-red-300 border-red-500' }
+            ];
+
+            const mealDatabase = {
+                breakfast: [
+                    { name: '🥣 Oatmeal with Berries', calories: 280, protein: 8, carbs: 52, fat: 5, time: 10, ingredients: ['1/2 cup oats', '1 cup almond milk', '1/2 cup mixed berries', '1 tsp honey', '1 tbsp chia seeds'], steps: ['Heat almond milk in a pot', 'Add oats and cook for 5 minutes', 'Top with berries, honey, and chia seeds'], substitutes: ['Use regular milk instead of almond', 'Replace berries with banana'] },
+                    { name: '🍳 Veggie Omelet', calories: 250, protein: 18, carbs: 8, fat: 17, time: 15, ingredients: ['3 eggs', '1/4 cup bell peppers', '1/4 cup mushrooms', '1 oz cheese', 'Spinach'], steps: ['Whisk eggs in a bowl', 'Sauté vegetables in a pan', 'Pour eggs and add vegetables', 'Fold omelet and cook until set'], substitutes: ['Use egg whites only', 'Skip cheese for lower calories'] },
+                    { name: '🥞 Protein Pancakes', calories: 290, protein: 22, carbs: 35, fat: 6, time: 20, ingredients: ['1 scoop protein powder', '1 banana', '2 eggs', '1/4 cup oats', 'Cinnamon'], steps: ['Blend all ingredients', 'Pour onto hot griddle', 'Cook until bubbles form', 'Flip and cook other side'], substitutes: ['Use Greek yogurt instead of protein powder', 'Add berries for topping'] },
+                    { name: '🍞 Avocado Toast', calories: 270, protein: 10, carbs: 28, fat: 15, time: 10, ingredients: ['2 slices whole grain bread', '1/2 avocado', '1 egg', 'Cherry tomatoes', 'Everything bagel seasoning'], steps: ['Toast bread until golden', 'Mash avocado with fork', 'Spread on toast', 'Top with poached egg and tomatoes'], substitutes: ['Use sweet potato toast', 'Add smoked salmon'] },
+                    { name: '🥗 Greek Yogurt Parfait', calories: 285, protein: 20, carbs: 42, fat: 6, time: 5, ingredients: ['1 cup Greek yogurt', '1/2 cup granola', '1/2 cup berries', '1 tbsp honey', 'Sliced almonds'], steps: ['Layer yogurt in a glass', 'Add granola and berries', 'Drizzle with honey', 'Top with almonds'], substitutes: ['Use coconut yogurt', 'Replace granola with nuts'] },
+                    { name: '🥤 Green Smoothie Bowl', calories: 275, protein: 12, carbs: 48, fat: 7, time: 10, ingredients: ['1 banana', '1 cup spinach', '1/2 cup mango', '1/2 cup almond milk', 'Toppings: granola, coconut'], steps: ['Blend banana, spinach, mango, and milk', 'Pour into bowl', 'Add toppings'], substitutes: ['Use kale instead of spinach', 'Add protein powder'] },
+                    { name: '🧇 Whole Wheat Waffles', calories: 295, protein: 11, carbs: 45, fat: 9, time: 15, ingredients: ['1 cup whole wheat flour', '1 egg', '3/4 cup milk', '2 tbsp honey', 'Fresh berries'], steps: ['Mix dry ingredients', 'Whisk in wet ingredients', 'Cook in waffle maker', 'Top with berries'], substitutes: ['Use almond flour', 'Top with Greek yogurt'] },
+                    { name: '🍌 Banana Nut Oatmeal', calories: 280, protein: 9, carbs: 48, fat: 8, time: 10, ingredients: ['1/2 cup oats', '1 banana', '1 tbsp almond butter', '1 tbsp walnuts', 'Cinnamon'], steps: ['Cook oats with water', 'Slice banana on top', 'Add almond butter and nuts', 'Sprinkle cinnamon'], substitutes: ['Use peanut butter', 'Add chia seeds'] },
+                    { name: '🥐 Breakfast Burrito', calories: 290, protein: 16, carbs: 32, fat: 11, time: 15, ingredients: ['1 whole wheat tortilla', '2 eggs', '1/4 cup black beans', '2 tbsp salsa', '1 oz cheese'], steps: ['Scramble eggs in pan', 'Warm tortilla', 'Add eggs, beans, salsa', 'Roll and enjoy'], substitutes: ['Use egg whites', 'Add avocado'] },
+                    { name: '🥄 Chia Pudding', calories: 265, protein: 8, carbs: 38, fat: 10, time: 5, ingredients: ['3 tbsp chia seeds', '1 cup almond milk', '1 tbsp maple syrup', '1/2 cup berries', 'Coconut flakes'], steps: ['Mix chia and milk', 'Refrigerate overnight', 'Top with berries and coconut'], substitutes: ['Use coconut milk', 'Add protein powder'] }
+                ],
+                lunch: [
+                    { name: '🥙 Chicken Caesar Wrap', calories: 380, protein: 32, carbs: 35, fat: 12, time: 15, ingredients: ['1 whole wheat tortilla', '4 oz grilled chicken', '2 cups romaine', '2 tbsp Caesar dressing', 'Parmesan'], steps: ['Grill and slice chicken', 'Toss lettuce with dressing', 'Add chicken and cheese to tortilla', 'Wrap and slice'], substitutes: ['Use Greek yogurt dressing', 'Add cherry tomatoes'] },
+                    { name: '🍜 Asian Noodle Bowl', calories: 370, protein: 25, carbs: 48, fat: 8, time: 20, ingredients: ['4 oz rice noodles', '4 oz shrimp', '2 cups vegetables', '2 tbsp soy sauce', 'Sesame seeds'], steps: ['Cook noodles according to package', 'Stir-fry shrimp and vegetables', 'Toss with noodles and sauce', 'Garnish with sesame seeds'], substitutes: ['Use zucchini noodles', 'Replace shrimp with tofu'] },
+                    { name: '🥗 Mediterranean Salad', calories: 360, protein: 18, carbs: 32, fat: 18, time: 15, ingredients: ['2 cups mixed greens', '1/2 cup chickpeas', '1/4 cup feta', 'Cherry tomatoes', 'Olives, olive oil'], steps: ['Combine greens in bowl', 'Add chickpeas, tomatoes, olives', 'Top with feta', 'Drizzle with oil and lemon'], substitutes: ['Add grilled chicken', 'Use balsamic dressing'] },
+                    { name: '🌯 Turkey & Hummus Wrap', calories: 365, protein: 28, carbs: 38, fat: 10, time: 10, ingredients: ['1 whole wheat wrap', '4 oz turkey breast', '3 tbsp hummus', 'Cucumber', 'Spinach'], steps: ['Spread hummus on wrap', 'Layer turkey and vegetables', 'Roll tightly', 'Slice in half'], substitutes: ['Use chicken breast', 'Add roasted red peppers'] },
+                    { name: '🍝 Caprese Pasta Salad', calories: 375, protein: 15, carbs: 52, fat: 12, time: 20, ingredients: ['1 cup whole wheat pasta', '1 cup cherry tomatoes', '4 oz mozzarella', 'Fresh basil', 'Balsamic glaze'], steps: ['Cook pasta and cool', 'Halve tomatoes and mozzarella', 'Toss with pasta and basil', 'Drizzle with balsamic'], substitutes: ['Use chickpea pasta', 'Add grilled chicken'] },
+                    { name: '🥪 Tuna Salad Sandwich', calories: 355, protein: 28, carbs: 35, fat: 10, time: 10, ingredients: ['2 slices whole grain bread', '1 can tuna', '2 tbsp Greek yogurt', 'Celery', 'Lettuce'], steps: ['Mix tuna with yogurt', 'Add diced celery', 'Spread on bread', 'Top with lettuce'], substitutes: ['Use avocado instead of yogurt', 'Serve on crackers'] },
+                    { name: '🍛 Quinoa Buddha Bowl', calories: 380, protein: 16, carbs: 55, fat: 11, time: 25, ingredients: ['1/2 cup quinoa', '1/2 cup chickpeas', '1 cup roasted vegetables', '2 tbsp tahini', 'Lemon juice'], steps: ['Cook quinoa', 'Roast vegetables and chickpeas', 'Arrange in bowl', 'Drizzle with tahini sauce'], substitutes: ['Use brown rice', 'Add grilled tofu'] },
+                    { name: '🌮 Fish Tacos', calories: 370, protein: 30, carbs: 38, fat: 10, time: 20, ingredients: ['2 corn tortillas', '5 oz white fish', '1/2 cup cabbage slaw', 'Lime', 'Cilantro'], steps: ['Season and grill fish', 'Warm tortillas', 'Flake fish onto tortillas', 'Top with slaw and lime'], substitutes: ['Use shrimp', 'Add avocado'] },
+                    { name: '🥣 Minestrone Soup', calories: 350, protein: 14, carbs: 58, fat: 6, time: 30, ingredients: ['2 cups vegetable broth', '1/2 cup pasta', '1 cup mixed vegetables', 'Kidney beans', 'Italian herbs'], steps: ['Bring broth to boil', 'Add vegetables and pasta', 'Simmer until tender', 'Season with herbs'], substitutes: ['Add chicken breast', 'Use gluten-free pasta'] },
+                    { name: '🍱 Teriyaki Chicken Bowl', calories: 385, protein: 32, carbs: 45, fat: 8, time: 25, ingredients: ['4 oz chicken breast', '1/2 cup brown rice', 'Broccoli', '2 tbsp teriyaki sauce', 'Sesame seeds'], steps: ['Cook rice', 'Grill chicken and slice', 'Steam broccoli', 'Drizzle with teriyaki'], substitutes: ['Use salmon', 'Add edamame'] }
+                ],
+                dinner: [
+                    { name: '🍗 Herb-Roasted Chicken', calories: 420, protein: 38, carbs: 28, fat: 16, time: 45, ingredients: ['6 oz chicken breast', '1 cup roasted vegetables', '1/2 cup quinoa', 'Fresh herbs', 'Olive oil'], steps: ['Season chicken with herbs', 'Roast at 400°F for 25-30 minutes', 'Roast vegetables alongside', 'Serve with quinoa'], substitutes: ['Use chicken thighs', 'Replace quinoa with sweet potato'] },
+                    { name: '🐟 Baked Salmon', calories: 410, protein: 35, carbs: 30, fat: 18, time: 30, ingredients: ['5 oz salmon fillet', '1 cup asparagus', '1/2 cup wild rice', 'Lemon', 'Dill'], steps: ['Season salmon with lemon and dill', 'Bake at 375°F for 15-20 minutes', 'Roast asparagus', 'Serve with rice'], substitutes: ['Use trout', 'Add green beans'] },
+                    { name: '🍝 Turkey Bolognese', calories: 415, protein: 32, carbs: 48, fat: 10, time: 40, ingredients: ['4 oz ground turkey', '1 cup whole wheat pasta', '1 cup marinara', 'Zucchini', 'Parmesan'], steps: ['Brown turkey in pan', 'Add marinara and simmer', 'Cook pasta', 'Toss together and serve'], substitutes: ['Use lentils instead of turkey', 'Use zucchini noodles'] },
+                    { name: '🌮 Beef Stir-Fry', calories: 405, protein: 30, carbs: 38, fat: 14, time: 25, ingredients: ['4 oz lean beef', '2 cups mixed vegetables', '1/2 cup brown rice', 'Stir-fry sauce', 'Garlic'], steps: ['Cook rice', 'Stir-fry beef until browned', 'Add vegetables and sauce', 'Serve over rice'], substitutes: ['Use chicken', 'Add cashews'] },
+                    { name: '🍲 Vegetarian Chili', calories: 395, protein: 18, carbs: 62, fat: 8, time: 35, ingredients: ['1 cup mixed beans', '1 cup diced tomatoes', 'Bell peppers', 'Onion', 'Chili spices'], steps: ['Sauté onions and peppers', 'Add beans and tomatoes', 'Season and simmer 20 minutes', 'Serve with cornbread'], substitutes: ['Add ground beef', 'Top with Greek yogurt'] },
+                    { name: '🍕 Margherita Pizza', calories: 425, protein: 22, carbs: 52, fat: 14, time: 25, ingredients: ['1 whole wheat pita', '1/2 cup marinara', '3 oz mozzarella', 'Fresh basil', 'Tomatoes'], steps: ['Spread sauce on pita', 'Add cheese and tomatoes', 'Bake at 425°F for 12 minutes', 'Top with fresh basil'], substitutes: ['Use cauliflower crust', 'Add vegetables'] },
+                    { name: '🥘 Lemon Herb Cod', calories: 400, protein: 36, carbs: 35, fat: 12, time: 30, ingredients: ['6 oz cod fillet', '1 cup Brussels sprouts', '1/2 cup couscous', 'Lemon', 'Thyme'], steps: ['Season cod with lemon and thyme', 'Bake at 400°F for 15 minutes', 'Roast Brussels sprouts', 'Serve with couscous'], substitutes: ['Use halibut', 'Replace couscous with cauliflower rice'] },
+                    { name: '🍛 Thai Curry', calories: 410, protein: 25, carbs: 48, fat: 13, time: 35, ingredients: ['4 oz chicken', '1 cup coconut milk', '2 cups vegetables', '1/2 cup jasmine rice', 'Curry paste'], steps: ['Cook rice', 'Simmer curry paste and coconut milk', 'Add chicken and vegetables', 'Serve over rice'], substitutes: ['Use shrimp', 'Add bamboo shoots'] },
+                    { name: '🥙 Falafel Bowl', calories: 415, protein: 16, carbs: 58, fat: 14, time: 30, ingredients: ['4 falafel balls', '1/2 cup couscous', 'Hummus', 'Cucumber', 'Tahini sauce'], steps: ['Bake falafel', 'Cook couscous', 'Arrange with vegetables', 'Drizzle with tahini'], substitutes: ['Use quinoa', 'Add pickled vegetables'] },
+                    { name: '🍖 Pork Tenderloin', calories: 420, protein: 36, carbs: 32, fat: 15, time: 40, ingredients: ['5 oz pork tenderloin', '1 cup roasted root vegetables', '1/2 cup mashed cauliflower', 'Rosemary', 'Garlic'], steps: ['Season pork with rosemary', 'Roast at 375°F for 25 minutes', 'Roast vegetables', 'Serve with mashed cauliflower'], substitutes: ['Use chicken breast', 'Replace cauliflower with sweet potato'] }
+                ],
+                snacks: [
+                    { name: '🍎 Apple with Almond Butter', calories: 120, protein: 3, carbs: 18, fat: 5, time: 2, ingredients: ['1 apple', '1 tbsp almond butter'], steps: ['Slice apple', 'Serve with almond butter'], substitutes: ['Use peanut butter', 'Try with banana'] },
+                    { name: '🥜 Trail Mix', calories: 130, protein: 4, carbs: 15, fat: 7, time: 1, ingredients: ['1/4 cup mixed nuts', '2 tbsp dried fruit', 'Dark chocolate chips'], steps: ['Mix ingredients', 'Portion into small bags'], substitutes: ['Use seeds instead of nuts', 'Add coconut flakes'] },
+                    { name: '🥒 Veggie Sticks with Hummus', calories: 110, protein: 4, carbs: 14, fat: 5, time: 5, ingredients: ['Carrots', 'Celery', 'Bell peppers', '3 tbsp hummus'], steps: ['Cut vegetables into sticks', 'Serve with hummus'], substitutes: ['Use guacamole', 'Try ranch dip'] },
+                    { name: '🍪 Protein Energy Balls', calories: 125, protein: 5, carbs: 16, fat: 5, time: 10, ingredients: ['1/2 cup oats', '2 tbsp peanut butter', '1 tbsp honey', 'Mini chocolate chips'], steps: ['Mix all ingredients', 'Roll into balls', 'Refrigerate'], substitutes: ['Use almond butter', 'Add chia seeds'] },
+                    { name: '🧀 String Cheese & Crackers', calories: 115, protein: 8, carbs: 12, fat: 4, time: 2, ingredients: ['1 string cheese', '6 whole grain crackers'], steps: ['Arrange on plate', 'Enjoy'], substitutes: ['Use cherry tomatoes', 'Add cucumber slices'] },
+                    { name: '🥤 Protein Smoothie', calories: 135, protein: 12, carbs: 18, fat: 2, time: 5, ingredients: ['1/2 banana', '1/2 scoop protein powder', '1 cup almond milk', 'Spinach', 'Ice'], steps: ['Blend all ingredients', 'Pour and enjoy'], substitutes: ['Add berries', 'Use Greek yogurt'] },
+                    { name: '🍿 Air-Popped Popcorn', calories: 100, protein: 3, carbs: 20, fat: 1, time: 5, ingredients: ['3 cups air-popped popcorn', 'Nutritional yeast', 'Sea salt'], steps: ['Pop popcorn', 'Season with yeast and salt'], substitutes: ['Add cinnamon', 'Try with coconut oil'] },
+                    { name: '🥗 Greek Yogurt Dip', calories: 120, protein: 10, carbs: 14, fat: 3, time: 5, ingredients: ['1/2 cup Greek yogurt', 'Cucumber slices', 'Dill', 'Garlic'], steps: ['Mix yogurt with herbs', 'Serve with cucumber'], substitutes: ['Use with bell peppers', 'Add lemon'] },
+                    { name: '🌰 Roasted Chickpeas', calories: 125, protein: 6, carbs: 18, fat: 3, time: 25, ingredients: ['1/2 cup chickpeas', 'Olive oil spray', 'Paprika', 'Cumin'], steps: ['Toss chickpeas with spices', 'Roast at 400°F for 20 minutes', 'Cool and enjoy'], substitutes: ['Try different spices', 'Add nutritional yeast'] },
+                    { name: '🍊 Citrus & Nuts', calories: 115, protein: 3, carbs: 16, fat: 5, time: 2, ingredients: ['1 orange', '10 almonds'], steps: ['Peel orange', 'Serve with almonds'], substitutes: ['Use clementine', 'Try walnuts'] }
+                ]
+            };
+
+            // Meal timing configuration (in hours)
+            const mealTimings = {
+                breakfast: { next: 'lunch', hours: 4 },
+                lunch: { next: 'snack', hours: 3 },
+                snack: { next: 'dinner', hours: 3 },
+                dinner: { next: null, hours: 0 }
+            };
+
+            // Initialize week meals with random meals for each day
+            useEffect(() => {
+                const savedMeals = localStorage.getItem('week-meals');
+                if (savedMeals) {
+                    setWeekMeals(JSON.parse(savedMeals));
+                } else {
+                    const initialWeekMeals = {};
+                    for (let day = 1; day <= 7; day++) {
+                        const dayKey = `day${day}`;
+                        initialWeekMeals[dayKey] = {
+                            breakfast: mealDatabase.breakfast[Math.floor(Math.random() * mealDatabase.breakfast.length)],
+                            lunch: mealDatabase.lunch[Math.floor(Math.random() * mealDatabase.lunch.length)],
+                            dinner: mealDatabase.dinner[Math.floor(Math.random() * mealDatabase.dinner.length)],
+                            snack: mealDatabase.snacks[Math.floor(Math.random() * mealDatabase.snacks.length)]
+                        };
+                    }
+                    setWeekMeals(initialWeekMeals);
+                    localStorage.setItem('week-meals', JSON.stringify(initialWeekMeals));
+                }
+
+                // Load progress from localStorage
+                const savedProgress = {};
+                const savedNextMealTimers = {};
+                for (let day = 1; day <= 7; day++) {
+                    const dayKey = `day${day}`;
+                    const storedProgress = localStorage.getItem(`progress-${dayKey}`);
+                    if (storedProgress) {
+                        savedProgress[dayKey] = JSON.parse(storedProgress);
+                    } else {
+                        savedProgress[dayKey] = {
+                            breakfast: false,
+                            lunch: false,
+                            dinner: false,
+                            snack: false,
+                            extra: 0
+                        };
+                    }
+
+                    // Load next meal timers
+                    const storedTimers = localStorage.getItem(`next-meal-timer-${dayKey}`);
+                    if (storedTimers) {
+                        savedNextMealTimers[dayKey] = JSON.parse(storedTimers);
+                    }
+                }
+                setProgress(savedProgress);
+                setNextMealTimers(savedNextMealTimers);
+            }, []);
+
+            // Save weekMeals to localStorage whenever it changes
+            useEffect(() => {
+                if (Object.keys(weekMeals).length > 0) {
+                    localStorage.setItem('week-meals', JSON.stringify(weekMeals));
+                }
+            }, [weekMeals]);
+
+            // Save progress to localStorage whenever it changes
+            useEffect(() => {
+                Object.keys(progress).forEach(dayKey => {
+                    localStorage.setItem(`progress-${dayKey}`, JSON.stringify(progress[dayKey]));
+                });
+            }, [progress]);
+
+            // Save next meal timers to localStorage
+            useEffect(() => {
+                Object.keys(nextMealTimers).forEach(dayKey => {
+                    localStorage.setItem(`next-meal-timer-${dayKey}`, JSON.stringify(nextMealTimers[dayKey]));
+                });
+            }, [nextMealTimers]);
+
+            // Update next meal timers every second
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setNextMealTimers(prev => {
+                        const updated = { ...prev };
+                        let changed = false;
+
+                        Object.keys(updated).forEach(dayKey => {
+                            Object.keys(updated[dayKey] || {}).forEach(mealType => {
+                                if (updated[dayKey][mealType] && updated[dayKey][mealType].endTime) {
+                                    const remaining = updated[dayKey][mealType].endTime - Date.now();
+                                    if (remaining <= 0) {
+                                        delete updated[dayKey][mealType];
+                                        changed = true;
+                                    }
+                                }
+                            });
+                        });
+
+                        return changed ? updated : prev;
+                    });
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            const theme = themes[currentTheme];
+            const dayKey = `day${currentDay}`;
+            const meals = weekMeals[dayKey] || {};
+            const dayProgress = progress[dayKey] || { breakfast: false, lunch: false, dinner: false, snack: false, extra: 0 };
+
+            const totalConsumed = 
+                (dayProgress.breakfast ? meals.breakfast?.calories || 0 : 0) +
+                (dayProgress.lunch ? meals.lunch?.calories || 0 : 0) +
+                (dayProgress.dinner ? meals.dinner?.calories || 0 : 0) +
+                (dayProgress.snack ? meals.snack?.calories || 0 : 0) +
+                dayProgress.extra;
+
+            const totalProtein = 
+                (dayProgress.breakfast ? meals.breakfast?.protein || 0 : 0) +
+                (dayProgress.lunch ? meals.lunch?.protein || 0 : 0) +
+                (dayProgress.dinner ? meals.dinner?.protein || 0 : 0) +
+                (dayProgress.snack ? meals.snack?.protein || 0 : 0);
+
+            const regenerateMeal = (mealType) => {
+                const availableMeals = mealDatabase[mealType === 'snack' ? 'snacks' : mealType];
+                const currentMeal = meals[mealType];
+                const otherMeals = availableMeals.filter(m => m.name !== currentMeal?.name);
+                const newMeal = otherMeals[Math.floor(Math.random() * otherMeals.length)];
+                
+                setWeekMeals(prev => ({
+                    ...prev,
+                    [dayKey]: {
+                        ...prev[dayKey],
+                        [mealType]: newMeal
+                    }
+                }));
+            };
+
+            const toggleMeal = (mealType) => {
+                const isCurrentlyChecked = dayProgress[mealType];
+                
+                setProgress(prev => ({
+                    ...prev,
+                    [dayKey]: {
+                        ...prev[dayKey],
+                        [mealType]: !prev[dayKey][mealType]
+                    }
+                }));
+
+                // If checking the meal (eating it), start countdown to next meal
+                if (!isCurrentlyChecked && mealTimings[mealType]?.next) {
+                    const nextMealType = mealTimings[mealType].next;
+                    const hours = mealTimings[mealType].hours;
+                    const endTime = Date.now() + (hours * 60 * 60 * 1000);
+
+                    setNextMealTimers(prev => ({
+                        ...prev,
+                        [dayKey]: {
+                            ...prev[dayKey],
+                            [nextMealType]: {
+                                endTime: endTime,
+                                hours: hours
+                            }
+                        }
+                    }));
+                }
+            };
+
+            const formatCountdown = (endTime) => {
+                const remaining = endTime - Date.now();
+                if (remaining <= 0) return "Ready!";
+
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            const handleOverate = () => {
+                const calories = parseInt(extraCalories);
+                if (calories > 0) {
+                    setProgress(prev => ({
+                        ...prev,
+                        [dayKey]: {
+                            ...prev[dayKey],
+                            extra: prev[dayKey].extra + calories
+                        }
+                    }));
+                    setExtraCalories('');
+                    setOvereatingModal(null);
+                }
+            };
+
+            const resetDayProgress = () => {
+                if (confirm('Reset all progress for this day?')) {
+                    setProgress(prev => ({
+                        ...prev,
+                        [dayKey]: {
+                            breakfast: false,
+                            lunch: false,
+                            dinner: false,
+                            snack: false,
+                            extra: 0
+                        }
+                    }));
+                    
+                    setNextMealTimers(prev => ({
+                        ...prev,
+                        [dayKey]: {}
+                    }));
+                }
+            };
+
+            const generateShoppingList = () => {
+                // Helper function to parse ingredient string
+                const parseIngredient = (ingredient) => {
+                    // Common patterns: "4 oz chicken", "1/2 cup oats", "200g beef", "1 apple"
+                    const fractionMap = { '1/2': 0.5, '1/3': 0.33, '2/3': 0.67, '1/4': 0.25, '3/4': 0.75, '1/8': 0.125 };
+                    
+                    // Try to match: number + unit + product OR fraction + unit + product
+                    const match = ingredient.match(/^([\d\/]+)\s*(oz|g|cup|cups|tbsp|tsp|ml|l|kg|lb|lbs)?\s+(.+)$/i);
+                    
+                    if (match) {
+                        let amount = match[1];
+                        // Convert fractions
+                        if (fractionMap[amount]) {
+                            amount = fractionMap[amount];
+                        } else {
+                            amount = parseFloat(amount);
+                        }
+                        
+                        const unit = match[2] ? match[2].toLowerCase() : 'piece';
+                        const product = match[3].trim().toLowerCase();
+                        
+                        return { amount, unit, product, original: ingredient };
+                    }
+                    
+                    // If no pattern matched, return as is
+                    return { amount: 1, unit: 'piece', product: ingredient.toLowerCase(), original: ingredient };
+                };
+                
+                const ingredientsMap = {};
+                
+                Object.keys(weekMeals).forEach(day => {
+                    const dayMeals = weekMeals[day];
+                    ['breakfast', 'lunch', 'dinner', 'snack'].forEach(mealType => {
+                        const meal = dayMeals[mealType];
+                        if (meal && meal.ingredients) {
+                            meal.ingredients.forEach(ingredient => {
+                                const parsed = parseIngredient(ingredient);
+                                const key = `${parsed.product}_${parsed.unit}`;
+                                
+                                if (ingredientsMap[key]) {
+                                    ingredientsMap[key].totalAmount += parsed.amount;
+                                    ingredientsMap[key].count++;
+                                    if (!ingredientsMap[key].meals.includes(meal.name)) {
+                                        ingredientsMap[key].meals.push(meal.name);
+                                    }
+                                } else {
+                                    ingredientsMap[key] = {
+                                        product: parsed.product,
+                                        unit: parsed.unit,
+                                        originalAmount: parsed.amount,
+                                        totalAmount: parsed.amount,
+                                        count: 1,
+                                        meals: [meal.name],
+                                        original: parsed.original
+                                    };
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                const list = Object.values(ingredientsMap).map(item => {
+                    // Format the display
+                    const productName = item.product.charAt(0).toUpperCase() + item.product.slice(1);
+                    
+                    return {
+                        name: productName,
+                        originalAmount: item.originalAmount,
+                        totalAmount: Math.round(item.totalAmount * 100) / 100, // Round to 2 decimals
+                        unit: item.unit,
+                        count: item.count,
+                        meal: item.meals.join(', ')
+                    };
+                });
+                
+                setShoppingList(list);
+                setShowShoppingList(true);
+            };
+
+            const downloadShoppingList = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal');
+                doc.setFont('Roboto');
+                
+                doc.setFillColor(147, 51, 234);
+                doc.rect(0, 0, 210, 40, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(24);
+                doc.text('Shopping List', 20, 25);
+                
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(12);
+                
+                let yPos = 55;
+                
+                shoppingList.forEach((item, i) => {
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFillColor(243, 244, 246);
+                    const boxHeight = item.count > 1 ? 20 : 15;
+                    doc.rect(15, yPos - 5, 180, boxHeight, 'F');
+                    
+                    doc.setFontSize(14);
+                    doc.setFont('Roboto', 'bold');
+                    doc.text(item.name, 20, yPos);
+                    
+                    doc.setFont('Roboto', 'normal');
+                    doc.setFontSize(11);
+                    doc.setTextColor(37, 99, 235);
+                    
+                    if (item.count > 1) {
+                        doc.text(`${item.originalAmount} ${item.unit} x ${item.count} times = ${item.totalAmount} ${item.unit} total`, 20, yPos + 6);
+                        doc.setTextColor(107, 114, 128);
+                        doc.setFontSize(10);
+                        doc.text(`For: ${item.meal}`, 20, yPos + 11);
+                        yPos += boxHeight + 5;
+                    } else {
+                        doc.text(`${item.totalAmount} ${item.unit}`, 20, yPos + 5);
+                        doc.setTextColor(107, 114, 128);
+                        doc.setFontSize(10);
+                        doc.text(`For: ${item.meal}`, 20, yPos + 10);
+                        yPos += boxHeight + 5;
+                    }
+                    
+                    doc.setTextColor(0, 0, 0);
+                });
+                
+                doc.save('shopping-list.pdf');
+            };
+
+            const downloadMealPlan = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal');
+                doc.setFont('Roboto');
+                
+                doc.setFillColor(147, 51, 234);
+                doc.rect(0, 0, 210, 45, 'F');
+                
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(26);
+                doc.text('Weekly Meal Plan', 20, 25);
+                doc.setFontSize(14);
+                doc.text('1200 Calorie Daily Target', 20, 35);
+                
+                let yPos = 60;
+                
+                daysOfWeek.forEach((day, index) => {
+                    const dayKey = `day${index + 1}`;
+                    const dayMeals = weekMeals[dayKey];
+                    
+                    if (!dayMeals) return;
+                    
+                    if (yPos > 240) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    const dayColors = [
+                        [196, 181, 253],
+                        [191, 219, 254],
+                        [187, 247, 208],
+                        [254, 240, 138],
+                        [254, 215, 170],
+                        [251, 207, 232],
+                        [254, 202, 202]
+                    ];
+                    
+                    doc.setFillColor(...dayColors[index]);
+                    doc.rect(15, yPos - 7, 180, 12, 'F');
+                    
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(16);
+                    doc.text(day.name, 20, yPos);
+                    yPos += 15;
+                    
+                    const mealTypes = [
+                        { key: 'breakfast', label: 'Breakfast' },
+                        { key: 'lunch', label: 'Lunch' },
+                        { key: 'dinner', label: 'Dinner' },
+                        { key: 'snack', label: 'Snack' }
+                    ];
+                    
+                    mealTypes.forEach(mealType => {
+                        const meal = dayMeals[mealType.key];
+                        if (meal) {
+                            doc.setFillColor(249, 250, 251);
+                            doc.rect(20, yPos - 5, 170, 18, 'F');
+                            
+                            doc.setFontSize(12);
+                            doc.setTextColor(0, 0, 0);
+                            doc.text(`${mealType.label}`, 25, yPos);
+                            
+                            doc.text(meal.name, 25, yPos + 6);
+                            
+                            doc.setTextColor(107, 114, 128);
+                            doc.setFontSize(10);
+                            doc.text(`${meal.calories} cal | P: ${meal.protein}g | C: ${meal.carbs}g | F: ${meal.fat}g`, 25, yPos + 11);
+                            
+                            yPos += 23;
+                        }
+                    });
+                    
+                    yPos += 5;
+                });
+                
+                doc.save('meal-plan.pdf');
+            };
+
+            const MealCard = ({ meal, mealType, onRegenerate, onToggle, onShowRecipe, isChecked, nextMealTimer }) => {
+                
+                return (
+                    <div className={`${darkMode ? 'bg-gray-800' : theme.card} backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xl border ${darkMode ? 'border-gray-700' : theme.border} transition-all hover:shadow-2xl`}>
+                        <div className="flex items-start justify-between mb-3 md:mb-4">
+                            <div className="flex-1 min-w-0">
+                                <h3 className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text} mb-1 md:mb-2 break-words`}>{meal.name}</h3>
+                                <div className={`flex flex-wrap gap-1.5 md:gap-2 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <span className="whitespace-nowrap">🔥 {meal.calories} cal</span>
+                                    <span className="whitespace-nowrap">💪 {meal.protein}g protein</span>
+                                    <span className="whitespace-nowrap">⏱️ {meal.time} min</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => onToggle(mealType)}
+                                className={`ml-2 md:ml-3 w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                                    isChecked 
+                                        ? `${theme.accent} text-white shadow-lg` 
+                                        : `${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`
+                                }`}
+                            >
+                                {isChecked && <span className="text-sm md:text-base">✓</span>}
+                            </button>
+                        </div>
+
+                        {/* Next meal countdown */}
+                        {nextMealTimer && nextMealTimer.endTime && (
+                            <div className={`mb-3 md:mb-4 p-2 md:p-3 rounded-xl ${darkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
+                                <div className={`text-xs md:text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'} font-medium mb-1`}>
+                                    Time until next meal:
+                                </div>
+                                <div className={`text-lg md:text-2xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {formatCountdown(nextMealTimer.endTime)}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2 mb-3 md:mb-4">
+                            {['Carbs', 'Fat'].map((nutrient, i) => {
+                                const value = i === 0 ? meal.carbs : meal.fat;
+                                return (
+                                    <div key={nutrient} className={`${darkMode ? 'bg-gray-700' : 'bg-white/50'} px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm`}>
+                                        <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{nutrient}:</span>
+                                        <span className={`font-semibold ml-1 ${darkMode ? 'text-white' : theme.text}`}>{value}g</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => onShowRecipe(meal)}
+                                className={`flex-1 min-w-[100px] ${theme.accent} ${theme.accentHover} text-white px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium transition-all shadow-lg text-sm md:text-base`}
+                            >
+                                📖 Recipe
+                            </button>
+                            <button
+                                onClick={() => onRegenerate(mealType)}
+                                disabled={isChecked}
+                                className={`px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium transition-all text-sm md:text-base min-w-[44px] ${
+                                    isChecked 
+                                        ? `${darkMode ? 'bg-gray-800 text-gray-600' : 'bg-gray-200 text-gray-400'} cursor-not-allowed opacity-50`
+                                        : `${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'}`
+                                }`}
+                            >
+                                <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className={`min-h-screen bg-gradient-to-br ${darkMode ? 'from-gray-900 to-gray-800' : theme.bg} py-4 md:py-8 px-3 md:px-6 transition-colors duration-300`}>
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header */}
+                        <div className={`${darkMode ? 'bg-gray-800/90' : theme.card} backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-8 mb-4 md:mb-6 shadow-2xl border ${darkMode ? 'border-gray-700' : theme.border}`}>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-6">
+                                <div className="flex-1 min-w-0">
+                                    <h1 className={`text-3xl md:text-5xl font-bold ${darkMode ? 'text-white' : theme.text} mb-1 md:mb-2 break-words`}>
+                                        🍽️ 1200 Calorie Meal Planner
+                                    </h1>
+                                    <p className={`text-sm md:text-lg ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    <button
+                                        onClick={() => setCurrentTheme((currentTheme + 1) % themes.length)}
+                                        className={`flex-1 md:flex-none ${theme.accent} ${theme.accentHover} text-white px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all shadow-lg text-sm md:text-base min-h-[44px]`}
+                                    >
+                                        🎨 Theme
+                                    </button>
+                                    <button
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        className={`flex-1 md:flex-none ${darkMode ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-indigo-500 hover:bg-indigo-600'} text-white px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all shadow-lg text-sm md:text-base flex items-center justify-center gap-2 min-h-[44px]`}
+                                    >
+                                        {darkMode ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
+                                        <span className="hidden md:inline">{darkMode ? 'Light' : 'Dark'}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Navigation */}
+                            <div className="flex gap-2 md:gap-4 mb-4 md:mb-6 overflow-x-auto pb-2">
+                                <button
+                                    onClick={() => setCurrentPage('meals')}
+                                    className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm md:text-base min-h-[44px] ${
+                                        currentPage === 'meals'
+                                            ? `${theme.accent} text-white shadow-lg`
+                                            : `${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-white/50 hover:bg-white/80 text-gray-700'}`
+                                    }`}
+                                >
+                                    <Home className="w-4 h-4 md:w-5 md:h-5" />
+                                    <span>Meals</span>
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage('overview')}
+                                    className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm md:text-base min-h-[44px] ${
+                                        currentPage === 'overview'
+                                            ? `${theme.accent} text-white shadow-lg`
+                                            : `${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-white/50 hover:bg-white/80 text-gray-700'}`
+                                    }`}
+                                >
+                                    <List className="w-4 h-4 md:w-5 md:h-5" />
+                                    <span>Week Overview</span>
+                                </button>
+                            </div>
+
+                            {/* Day selector */}
+                            {currentPage === 'meals' && (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 md:gap-3">
+                                    {daysOfWeek.map((day, index) => (
+                                        <button
+                                            key={day.name}
+                                            onClick={() => setCurrentDay(index + 1)}
+                                            className={`px-3 md:px-4 py-2 md:py-3 rounded-xl font-medium transition-all border-2 text-sm md:text-base min-h-[44px] ${
+                                                currentDay === index + 1
+                                                    ? `${day.activeColor} shadow-lg transform scale-105`
+                                                    : `${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600' : day.color}`
+                                            }`}
+                                        >
+                                            {day.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {currentPage === 'meals' ? (
+                            <>
+                                {/* Progress Card */}
+                                <div className={`${darkMode ? 'bg-gray-800/90' : theme.card} backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 mb-4 md:mb-6 shadow-xl border ${darkMode ? 'border-gray-700' : theme.border}`}>
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4 mb-3 md:mb-4">
+                                        <div className="flex-1 min-w-0">
+                                            <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : theme.text} mb-1 md:mb-2`}>Today's Progress</h2>
+                                            <div className={`text-2xl md:text-4xl font-bold ${darkMode ? 'text-white' : theme.text}`}>
+                                                {totalConsumed} <span className={`text-base md:text-xl ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>/ 1200 cal</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                                            <button
+                                                onClick={resetDayProgress}
+                                                className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all shadow-lg text-sm md:text-base whitespace-nowrap min-h-[44px]"
+                                            >
+                                                🔄 Reset Progress
+                                            </button>
+                                            <button
+                                                onClick={() => setOvereatingModal(dayKey)}
+                                                className="flex-1 sm:flex-none bg-orange-400 hover:bg-orange-500 text-white px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all shadow-lg text-sm md:text-base whitespace-nowrap min-h-[44px]"
+                                            >
+                                                ➕ Extra Calories
+                                            </button>
+                                            <button
+                                                onClick={downloadMealPlan}
+                                                className={`flex-1 sm:flex-none ${theme.accent} ${theme.accentHover} text-white px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all shadow-lg flex items-center justify-center gap-1.5 md:gap-2 text-sm md:text-base min-h-[44px]`}
+                                            >
+                                                <Download className="w-4 h-4 md:w-5 md:h-5" />
+                                                <span>Download</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className={`${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-3 md:h-4 mb-3 md:mb-4 overflow-hidden`}>
+                                        <div
+                                            className={`${totalConsumed > 1200 ? 'bg-red-500' : theme.accent.replace('bg-', 'bg-')} h-full transition-all duration-500 rounded-full`}
+                                            style={{ width: `${Math.min((totalConsumed / 1200) * 100, 100)}%` }}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 md:gap-3">
+                                        <div className={`${darkMode ? 'bg-gray-700' : 'bg-white/50'} p-2 md:p-3 rounded-xl`}>
+                                            <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Protein</div>
+                                            <div className={`text-lg md:text-2xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{totalProtein}g</div>
+                                        </div>
+                                        <div className={`${darkMode ? 'bg-gray-700' : 'bg-white/50'} p-2 md:p-3 rounded-xl`}>
+                                            <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Remaining</div>
+                                            <div className={`text-lg md:text-2xl font-bold ${totalConsumed > 1200 ? 'text-red-500' : (darkMode ? 'text-green-400' : 'text-green-600')}`}>
+                                                {Math.max(0, 1200 - totalConsumed)} cal
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Add Extra Calories Button */}
+                                <div className="mb-4 md:mb-6">
+                                    <button
+                                        onClick={() => setOvereatingModal(dayKey)}
+                                        className={`w-full ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200'} ${darkMode ? 'text-white' : 'text-purple-700'} px-4 md:px-6 py-3 md:py-4 rounded-xl font-medium transition-all shadow-lg flex items-center justify-center gap-2 text-sm md:text-base min-h-[44px] border-2 ${darkMode ? 'border-gray-600' : 'border-purple-300'}`}
+                                    >
+                                        <Plus className="w-5 h-5 md:w-6 md:h-6" />
+                                        <span>Extra meal today</span>
+                                    </button>
+                                </div>
+
+                                {/* Meal Cards */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
+                                    {['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
+                                        const meal = meals[mealType];
+                                        if (!meal) return null;
+                                        
+                                        const nextMealTimer = nextMealTimers[dayKey]?.[mealType];
+                                        
+                                        return (
+                                            <MealCard
+                                                key={mealType}
+                                                meal={meal}
+                                                mealType={mealType}
+                                                onRegenerate={regenerateMeal}
+                                                onToggle={toggleMeal}
+                                                onShowRecipe={setShowRecipe}
+                                                isChecked={dayProgress[mealType]}
+                                                nextMealTimer={nextMealTimer}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        ) : (
+                            /* Week Overview */
+                            <div className="space-y-3 md:space-y-4">
+                                <div className={`${darkMode ? 'bg-gray-800/90' : theme.card} backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xl border ${darkMode ? 'border-gray-700' : theme.border}`}>
+                                    <button
+                                        onClick={generateShoppingList}
+                                        className={`w-full ${theme.accent} ${theme.accentHover} text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 md:gap-3 shadow-lg text-base md:text-lg mb-4 md:mb-6 min-h-[44px]`}
+                                    >
+                                        <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
+                                        <span>Generate Shopping List</span>
+                                    </button>
+
+                                    {daysOfWeek.map((day, index) => {
+                                        const dayKey = `day${index + 1}`;
+                                        const dayMeals = weekMeals[dayKey];
+                                        const dayProg = progress[dayKey] || {};
+                                        
+                                        if (!dayMeals) return null;
+
+                                        const dayTotal = 
+                                            (dayProg.breakfast ? dayMeals.breakfast?.calories || 0 : 0) +
+                                            (dayProg.lunch ? dayMeals.lunch?.calories || 0 : 0) +
+                                            (dayProg.dinner ? dayMeals.dinner?.calories || 0 : 0) +
+                                            (dayProg.snack ? dayMeals.snack?.calories || 0 : 0) +
+                                            (dayProg.extra || 0);
+
+                                        return (
+                                            <div key={day.name} className={`mb-3 md:mb-4 p-3 md:p-4 ${darkMode ? 'bg-gray-700' : 'bg-white/50'} rounded-xl`}>
+                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 md:mb-3">
+                                                    <h3 className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{day.name}</h3>
+                                                    <div className={`text-base md:text-lg font-semibold ${darkMode ? 'text-white' : theme.text}`}>
+                                                        {dayTotal} / 1200 cal
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    {[
+                                                        { key: 'breakfast', icon: '🍳', label: 'Breakfast' },
+                                                        { key: 'lunch', icon: '🥗', label: 'Lunch' },
+                                                        { key: 'dinner', icon: '🍽️', label: 'Dinner' },
+                                                        { key: 'snack', icon: '🍎', label: 'Snack' }
+                                                    ].map(mealType => {
+                                                        const meal = dayMeals[mealType.key];
+                                                        if (!meal) return null;
+                                                        
+                                                        return (
+                                                            <div key={mealType.key} className={`p-2 md:p-3 ${darkMode ? 'bg-gray-600' : 'bg-white/70'} rounded-lg`}>
+                                                                <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-800'} text-sm md:text-base`}>
+                                                                    {mealType.icon} {mealType.label}
+                                                                </div>
+                                                                <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} break-words`}>{meal.name}</div>
+                                                                <div className={`text-xs md:text-sm font-semibold ${darkMode ? 'text-gray-200' : theme.text}`}>{meal.calories} cal</div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Recipe Modal */}
+                    {showRecipe && (
+                        <div 
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto modal-overlay" 
+                            onClick={() => setShowRecipe(null)}
+                        >
+                            <div className="min-h-screen flex items-center justify-center p-2 md:p-4 py-8">
+                                <div 
+                                    className={`${darkMode ? 'bg-gray-800' : theme.card} backdrop-blur-md rounded-2xl md:rounded-3xl shadow-2xl max-w-2xl w-full my-auto p-4 md:p-6 border ${darkMode ? 'border-gray-700' : theme.border}`} 
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div className="flex justify-between items-start mb-3 md:mb-4 sticky top-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm pb-2 z-10">
+                                        <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : theme.text} pr-2 break-words`}>{showRecipe.name}</h2>
+                                        <button 
+                                            onClick={() => setShowRecipe(null)} 
+                                            className={`${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} p-1 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center`}
+                                        >
+                                            <X className="w-5 h-5 md:w-6 md:h-6" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3 md:space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                                        <div className={`grid grid-cols-2 gap-2 p-3 md:p-4 ${darkMode ? 'bg-gray-700' : 'bg-white/50'} rounded-xl`}>
+                                            <div>
+                                                <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Calories</div>
+                                                <div className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{showRecipe.calories}</div>
+                                            </div>
+                                            <div>
+                                                <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Protein</div>
+                                                <div className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{showRecipe.protein}g</div>
+                                            </div>
+                                            <div>
+                                                <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Carbs</div>
+                                                <div className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{showRecipe.carbs}g</div>
+                                            </div>
+                                            <div>
+                                                <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Fat</div>
+                                                <div className={`text-lg md:text-xl font-bold ${darkMode ? 'text-white' : theme.text}`}>{showRecipe.fat}g</div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className={`text-base md:text-lg font-bold ${darkMode ? 'text-white' : theme.text} mb-2`}>📝 Ingredients</h3>
+                                            <ul className="space-y-1.5 md:space-y-2">
+                                                {showRecipe.ingredients.map((ing, i) => (
+                                                    <li key={i} className="flex items-start gap-2">
+                                                        <span className={`${darkMode ? 'text-purple-400' : 'text-purple-500'} mt-0.5 shrink-0`}>•</span>
+                                                        <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm md:text-base break-words`}>{ing}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <div>
+                                            <h3 className={`text-base md:text-lg font-bold ${darkMode ? 'text-white' : theme.text} mb-2`}>👨‍🍳 Instructions</h3>
+                                            <ol className="space-y-1.5 md:space-y-2">
+                                                {showRecipe.steps.map((step, i) => (
+                                                    <li key={i} className="flex items-start gap-2 md:gap-3">
+                                                        <span className={`${theme.accent} text-white rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center text-xs md:text-sm font-bold shrink-0 mt-0.5`}>
+                                                            {i + 1}
+                                                        </span>
+                                                        <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm md:text-base break-words`}>{step}</span>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+
+                                        <div className={`${darkMode ? 'bg-gray-700' : 'bg-blue-50'} p-3 md:p-4 rounded-xl`}>
+                                            <h3 className={`text-base md:text-lg font-bold ${darkMode ? 'text-white' : 'text-blue-900'} mb-2`}>💡 Substitutions</h3>
+                                            <ul className="space-y-1.5 md:space-y-2">
+                                                {showRecipe.substitutes.map((sub, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm md:text-base">
+                                                        <span className={`${darkMode ? 'text-blue-400' : 'text-blue-500'} mt-0.5 shrink-0`}>→</span>
+                                                        <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{sub}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            onClick={() => setShowRecipe(null)}
+                                            className={`w-full ${theme.accent} ${theme.accentHover} text-white px-4 py-3 rounded-xl font-medium transition-all shadow-lg min-h-[44px]`}
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Overeating Modal */}
+                    {overeatingModal !== null && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setOvereatingModal(null)}>
+                            <div className={`${darkMode ? 'bg-gray-800' : theme.card} rounded-2xl md:rounded-3xl shadow-2xl max-w-md w-full p-4 md:p-6 border ${darkMode ? 'border-gray-700' : ''}`} onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-start mb-4">
+                                    <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : theme.text}`}>Add Extra Calories</h2>
+                                    <button onClick={() => setOvereatingModal(null)} className={`${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} min-h-[44px] min-w-[44px] flex items-center justify-center`}>
+                                        <X className="w-5 h-5 md:w-6 md:h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-3 md:space-y-4">
+                                    <input
+                                        type="number"
+                                        value={extraCalories}
+                                        onChange={(e) => setExtraCalories(e.target.value)}
+                                        placeholder="Enter calories"
+                                        className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none text-base md:text-lg min-h-[44px] ${
+                                            darkMode 
+                                                ? 'bg-gray-700 border-gray-600 text-white focus:border-orange-400' 
+                                                : 'border-gray-300 focus:border-orange-400'
+                                        }`}
+                                    />
+                                    <button
+                                        onClick={handleOverate}
+                                        className="w-full bg-orange-400 hover:bg-orange-500 text-white px-6 py-3 rounded-xl font-medium transition-all text-base md:text-lg shadow-lg min-h-[44px]"
+                                    >
+                                        Add Calories
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Shopping List Modal */}
+                    {showShoppingList && (
+                        <div 
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto modal-overlay" 
+                            onClick={() => setShowShoppingList(false)}
+                        >
+                            <div className="min-h-screen flex items-center justify-center p-2 md:p-4 py-8">
+                                <div 
+                                    className={`${darkMode ? 'bg-gray-800' : theme.card} rounded-2xl md:rounded-3xl shadow-2xl max-w-2xl w-full my-auto p-4 md:p-6 border ${darkMode ? 'border-gray-700' : ''}`} 
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div className={`flex justify-between items-start mb-3 md:mb-4 sticky top-0 ${darkMode ? 'bg-gray-800/95' : 'bg-white/95'} backdrop-blur-sm pb-2 z-10`}>
+                                        <h2 className={`text-xl md:text-2xl font-bold ${darkMode ? 'text-white' : theme.text}`}>🛒 Shopping List</h2>
+                                        <button 
+                                            onClick={() => setShowShoppingList(false)} 
+                                            className={`${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} p-1 min-h-[44px] min-w-[44px] flex items-center justify-center`}
+                                        >
+                                            <X className="w-5 h-5 md:w-6 md:h-6" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2 mb-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                        {shoppingList.map((item, i) => (
+                                            <div key={i} className={`flex items-start gap-2 md:gap-3 p-3 md:p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg border ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                                                <span className={`${darkMode ? 'text-green-400' : 'text-green-500'} mt-0.5 text-base md:text-lg shrink-0`}>✓</span>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'} text-base md:text-lg mb-1`}>
+                                                        {item.name}
+                                                    </div>
+                                                    {item.count > 1 ? (
+                                                        <div className={`${darkMode ? 'text-blue-300' : 'text-blue-600'} text-sm md:text-base font-medium mb-1`}>
+                                                            {item.originalAmount} {item.unit} × {item.count} times = {item.totalAmount} {item.unit} total
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`${darkMode ? 'text-blue-300' : 'text-blue-600'} text-sm md:text-base font-medium mb-1`}>
+                                                            {item.totalAmount} {item.unit}
+                                                        </div>
+                                                    )}
+                                                    <div className={`text-xs md:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                        For: {item.meal}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex gap-2 md:gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                        <button
+                                            onClick={downloadShoppingList}
+                                            className={`flex-1 ${theme.accent} ${theme.accentHover} text-white px-4 py-2 md:py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg text-sm md:text-base min-h-[44px]`}
+                                        >
+                                            <Download className="w-4 h-4 md:w-5 md:h-5" />
+                                            <span>Download</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const text = shoppingList.map(item => {
+                                                    if (item.count > 1) {
+                                                        return `☐ ${item.name}\n   ${item.originalAmount} ${item.unit} × ${item.count} times = ${item.totalAmount} ${item.unit} total\n   For: ${item.meal}`;
+                                                    } else {
+                                                        return `☐ ${item.name} - ${item.totalAmount} ${item.unit}\n   For: ${item.meal}`;
+                                                    }
+                                                }).join('\n\n');
+                                                navigator.clipboard.writeText(text);
+                                                alert('Shopping list copied!');
+                                            }}
+                                            className={`flex-1 ${theme.accent} ${theme.accentHover} text-white px-4 py-2 md:py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg text-sm md:text-base min-h-[44px]`}
+                                        >
+                                            <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                                            <span>Copy</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="pt-3">
+                                        <button
+                                            onClick={() => setShowShoppingList(false)}
+                                            className={`w-full ${theme.accent} ${theme.accentHover} text-white px-4 py-3 rounded-xl font-medium transition-all shadow-lg min-h-[44px]`}
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MealPlanner />);
+    </script>
+</body>
+</html>
